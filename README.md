@@ -1,0 +1,1 @@
+# Projeto referente ao React, ASP.NET Core e EF Core - Full Stack
