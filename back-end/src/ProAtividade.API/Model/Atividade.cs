@@ -17,6 +17,13 @@ namespace ProAtividade.API.Model
         public int Id { get; set; }
         public string Titulo { get; set; }
         public string  Descricao { get; set; }         
-        public string Prioridade { get; set; }
+        public Prioridade Prioridade { get; set; }
+    }
+
+    public enum Prioridade{
+        NaoDefinido,
+        Baixa,
+        Normal,        
+        Alta
     }
 }
