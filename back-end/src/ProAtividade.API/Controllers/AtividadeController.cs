@@ -29,21 +29,18 @@ namespace ProAtividade.API.Controllers
             return _context.Atividades.FirstOrDefault(item => item.Id == id);
         }
 
-        [HttpPost()]
-        public IEnumerable<Atividade> Post(Atividade atividade){           
-
+        [HttpPost]
+        public Atividade Post([FromBody]Atividade atividade)
+        {
             _context.Atividades.Add(atividade);
-
-            if(_context.SaveChanges() > 0){
-                return _context.Atividades.ToList();
-            }
-            else{
-                throw new Exception("Não foi possivel adicionar o elemento");
-            }            
+            if (_context.SaveChanges() > 0)
+                return _context.Atividades.FirstOrDefault(ati => ati.Id == atividade.Id);
+            else
+                throw new Exception("Você não conseguiu adicionar uma atividade");
         }
 
         [HttpPut("{id}")]
-        public Atividade Put(int id, Atividade atividade){
+        public Atividade Put(int id, [FromBody]Atividade atividade){
 
             if(atividade.Id != id) throw new Exception("Você está tentando atualizar a atividade errada");
 
