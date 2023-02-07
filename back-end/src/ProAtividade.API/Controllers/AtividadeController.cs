@@ -3,68 +3,112 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ProAtividade.API.Data;
-using ProAtividade.API.Model;
+using ProAtividade.Data.Context;
+using ProAtividade.Domain.Entities;
+using ProAtividade.Domain.Interfaces.Services;
 
 namespace ProAtividade.API.Controllers
 {
     [Route("api/[controller]")]
     public class AtividadeController : Controller
     {
-        private readonly DataContext _context; 
-        public AtividadeController(DataContext context)
+        private readonly IAtividadeService _atividadeService;
+
+        public AtividadeController(IAtividadeService atividadeService)
         {
-            _context = context;
+            _atividadeService = atividadeService;
         }
 
         [HttpGet]
-        public IEnumerable<Atividade> Get(){
-            return _context.Atividades.ToList();
+        public async Task<IActionResult> Get(){
+            try
+             {
+                var atividades = await _atividadeService.PegarTodasAtividadesAsync();
+                if(atividades == null) return NoContent();
+
+                return Ok(atividades);
+             }
+             catch (System.Exception ex)
+             {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Erro ao tentar recuperar atividade. Erro>: {ex.Message}");
+             }
         }
 
         [HttpGet("{id}")]
-        public Atividade Get(int id){
-            return _context.Atividades.FirstOrDefault(item => item.Id == id);
+        public async Task<IActionResult> Get(int id){
+            try
+             {
+                var atividade = await _atividadeService.PegarAtividadePorId(id);
+                if(atividade == null) return NoContent();
+
+                return Ok(atividade);
+             }
+             catch (System.Exception ex)
+             {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Erro ao tentar recuperar atividade com id: {id}. Erro>: {ex.Message}");
+             }
         }
 
         [HttpPost]
-        public Atividade Post([FromBody]Atividade atividade)
+        public async Task<IActionResult> Post([FromBody]Atividade atividade)
         {
-            _context.Atividades.Add(atividade);
-            if (_context.SaveChanges() > 0)
-                return _context.Atividades.FirstOrDefault(ati => ati.Id == atividade.Id);
-            else
-                throw new Exception("Você não conseguiu adicionar uma atividade");
+            try
+             {
+                var atividadeAdd = await _atividadeService.AdicionarAtividade(atividade);
+                if(atividadeAdd == null) return NoContent();
+
+                return Ok(atividadeAdd);
+             }
+             catch (System.Exception ex)
+             {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Erro ao tentar adicionar atividade. Erro>: {ex.Message}");
+             }
         }
 
         [HttpPut("{id}")]
-        public Atividade Put(int id, [FromBody]Atividade atividade){
+        public async Task<IActionResult> Put(int id, [FromBody]Atividade atividade){
 
-            if(atividade.Id != id) throw new Exception("Você está tentando atualizar a atividade errada");
+           try
+             {
+                if(atividade.Id !=  id) 
+                    this.StatusCode(StatusCodes.Status409Conflict, 
+                    $"Você está tendo atualizar a tividade errada");
 
-            _context.Update(atividade);
-            if(_context.SaveChanges() > 0){
-                return _context.Atividades.FirstOrDefault(x => x.Id == id);
-            }
-            else{
-                return new Atividade();
-            }
+                var atividadeAtualizada = await _atividadeService.AtualizarAtividade(atividade);
+                if(atividadeAtualizada == null) return NoContent();
+
+                return Ok(atividadeAtualizada);
+             }
+             catch (System.Exception ex)
+             {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Erro ao tentar atualizar atividade id:{id}. Erro: {ex.Message}");
+             }
         }
 
         [HttpDelete("{id}")]
-        public bool Delelete(int id){
-
-            var atividade = _context.Atividades.FirstOrDefault(x => x.Id == id);
-
-            if(atividade == null){
-                throw new Exception("Você está tentando deletar uma atividade que não existe!");
+        public async Task<IActionResult> Delelete(int id){
+            try
+            {
+                if(await _atividadeService.DeletarAtividade(id)){
+                    return Ok(new {message = "Deletado"});
+                }
+                else{
+                    return BadRequest("Ocorreu um problema não especifico ao tentar deletar atividade.");
+                }                
             }
-
-            _context.Remove(atividade);
-
-            return _context.SaveChanges() > 0;
+            catch (System.Exception ex)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, 
+                        $"Erro ao deletar atividade id: {id} Erro: {ex.Message}");
+            }
+            
         }
         
     }
